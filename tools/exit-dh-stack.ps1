@@ -5,7 +5,7 @@
 #   [2] 弹幕 reader: multi-danmaku-tts reader.py + tray.ps1 + tts_worker.py
 #   [3] douyinLive.exe (抖音弹幕本地服务)
 #   [4] 调试 Edge (CDP 9223, 视频号中控台)
-#   [5] OmniVoice TTS (WSL2 demo_flashinfer.py, 释放显存)
+#   [5] OmniVoice TTS (WSL2 release_cuda_vram.py / omnivoice-demo, 释放 CUDA 显存)
 # 故意不动: DSH(3080) / DSH语音桥(8765) / NapCat / Docker(DUIX) / WSL 本体
 # 用法:  exit-dh-stack.ps1            真退出
 #        exit-dh-stack.ps1 -ListOnly  只看会杀什么, 不杀
@@ -72,29 +72,24 @@ if ($kill.Count -eq 0) {
     }
 }
 
-# ── [5] WSL2 OmniVoice TTS ────────────────────────────────────
+# ── [5] WSL2 OmniVoice TTS（杀进程释放 CUDA 显存）──────────────
+$releasePy = Join-Path $PSScriptRoot "release_cuda_vram.py"
 if ($ListOnly) {
-    if (Test-Port 9877) { Write-Host "[杀] OmniVoice TTS (WSL2 :9877, demo_flashinfer.py)" -ForegroundColor Yellow }
+    if (Test-Port 9877) { Write-Host "[杀] OmniVoice TTS (WSL2 :9877) -> release_cuda_vram.py" -ForegroundColor Yellow }
     else { Write-Host "[5] OmniVoice TTS 未运行(:9877 无监听)" -ForegroundColor DarkGray }
 } else {
     if (Test-Port 9877) {
-        wsl -d Ubuntu-22.04 -- bash -lc "pkill -f demo_flashinfer.py; exit 0" 2>$null | Out-Null
+        if (Test-Path $releasePy) {
+            wsl -d Ubuntu-22.04 -u alex -- bash -lc "python3 '/mnt/e/ai/xiaoya/cyber-xiaoya-live/tools/release_cuda_vram.py'" 2>$null
+        } else {
+            wsl -d Ubuntu-22.04 -- bash -lc "pkill -f 'omnivoice-demo|omnivoice.cli.demo|demo_flashinfer'; exit 0" 2>$null | Out-Null
+        }
         Start-Sleep -Seconds 2
-        if (Test-Port 9877) { Write-Host "[X] OmniVoice 还没退干净(:9877 仍监听), 手动查: wsl pkill -9 -f demo_flashinfer.py" -ForegroundColor Red }
-        else { Write-Host "[√] OmniVoice TTS 已退出 (WSL2, 显存随进程释放)" -ForegroundColor Green }
+        if (Test-Port 9877) { Write-Host "[X] OmniVoice 还没退干净(:9877 仍监听), 手动: wsl python3 /mnt/e/ai/xiaoya/cyber-xiaoya-live/tools/release_cuda_vram.py" -ForegroundColor Red }
+        else { Write-Host "[√] OmniVoice TTS 已退出 (WSL2, CUDA 显存随进程释放)" -ForegroundColor Green }
     } else {
         Write-Host "[5] OmniVoice TTS 未运行(:9877 无监听)" -ForegroundColor DarkGray
     }
 }
 
-# ── 汇总 ─────────────────────────────────────────────────────
-if (-not $ListOnly) {
-    Start-Sleep -Seconds 1
-    $left = @()
-    if (Test-Port 8795) { $left += '桥 :8795' }
-    if (Test-Port 9877) { $left += 'OmniVoice :9877' }
-    if ($left.Count -eq 0) { Write-Host "`n=== 全链路已退出 ✓ (8795 / 9877 均已释放) ===" -ForegroundColor Cyan }
-    else { Write-Host ("`n=== 仍有残留: " + ($left -join ', ') + " ===") -ForegroundColor Red }
-}
-Write-Host ""
-Write-Host "未触碰: DSH(3080) / DSH语音桥(8765) / NapCat / Docker(DUIX) / WSL 本体" -ForegroundColor DarkGray
+#

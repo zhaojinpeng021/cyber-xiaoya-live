@@ -1,42 +1,12 @@
 # 赛博小雅直播版 · 组件版数字人（Vidu s2）
 
-> **本项目永久免费开源。** 唯一官方来源：https://github.com/cyber-xiaoya/cyber-xiaoya-live
-> 任何付费售卖、代下载、代部署均未经授权，欢迎举报（举报：提 [Issue](https://github.com/cyber-xiaoya/cyber-xiaoya-live/issues) 或在本项目官方群里 @我）。
-
-> 👤 **作者：天工开帧** · [抖音](https://v.douyin.com/BgCJXnllitM/) · [哔哩哔哩](https://space.bilibili.com/11946287) · [YouTube](https://www.youtube.com/@jintaoyi) · [博客](https://www.19980303.xyz/)
-
-> 📦 **配套仓库**：[赛博小雅 · 弹幕采集器](https://github.com/cyber-xiaoya/cyber-xiaoya-danmaku) —— 抖音 / B站 / YouTube / 视频号，
+> 📦 **配套仓库**：[赛博小雅 · 弹幕采集器]—— 抖音 / B站 / YouTube / 视频号，
 > 装好并把 `tts.output` 设成 `dh` 就能把观众弹幕灌进本仓库的桥。
 
 > ⚠️ **先说清楚：这不是"下载双击就能播"的成品。**
 > 仓库里给的是**整套软件**（舞台页 + 本地桥 + 弹幕/歌单/录播全链路），
 > 但**不包含**作者的人物形象、克隆音色、人设、动作库、歌库和任何 API Key —— 那些需要你自己准备。
 > 这份 README 会把"从零跑起来"需要做的每一步写清楚，照着做大约 **1 小时**。
-
----
-
-## 效果
-
-<p align="center">
-  <img src="assets/live-on-douyin.jpg" width="620" alt="赛博小雅在抖音直播中的画面">
-</p>
-
-这是**手机端抖音直播的实拍截图**：观众弹幕进来 → 舞台页把指令翻译成动作 → 数字人执行（画面里是"拿出墨镜戴上"），
-底部是她正在说的话（由 LLM 生成 + 本机 TTS 合成）。
-
-<p align="center">
-  <img src="assets/demo.gif" width="320" alt="6 秒演示：弹幕驱动数字人动作">
-</p>
-
-> 6 秒实拍。能看到：弹幕 → 动作指令 → 数字人真的执行了。
-> 🎬 [**带声音的原片**（720×1560，v1.0.0 附件）](https://github.com/cyber-xiaoya/cyber-xiaoya-live/releases/download/v1.0.0/demo-sound.mp4) · 无声版 [demo.mp4](assets/demo.mp4)
-
-<p align="center">
-  <img src="assets/stage-panel.png" width="820" alt="舞台页（主播操作台）">
-</p>
-
-这是**主播这端看到的「舞台页」**：左边是数字人画面 + 实时字幕，右边是快捷指令 / 点播 / 参考图面板，
-底部一行是打字、直发动作、点播、中断、设置。（界面示例，字幕为演示数据）
 
 ---
 
@@ -123,15 +93,13 @@ uv pip install -r requirements.txt
 # 下载模型 OmniVoice-bf16（HuggingFace 或 ModelScope 均可）
 # 作者把模型放在 Windows 的 E 盘，WSL 里通过 /mnt/e/... 访问，不占 WSL 磁盘
 
-# 启动服务（FlashInfer + CUDA Graph 加速）
-export CUDA_HOME=~/omnivoice-wsl/.venv/lib/python3.12/site-packages/nvidia/cuda_nvcc
-.venv/bin/python demo_flashinfer.py \
+# 启动服务（官方 Gradio：omnivoice-demo）
+omnivoice-demo \
   --model /mnt/e/llama-models/models/OmniVoice-bf16 \
   --port 9877 --no-asr --ip 0.0.0.0 \
-  --graph-buckets 5,10,15,20,30
 ```
 
-> ⚠️ `demo_flashinfer.py` 的参数、依赖版本可能随上游变化，**以 OmniVoice 官方 README 为准**；
+> ⚠️ `omnivoice-demo` 的参数、依赖版本可能随上游变化，**以 OmniVoice 官方 README 为准**；
 > 上面的命令是作者本机实测能跑的那一份，仅作参考。
 
 启动后从 Windows 验证：
@@ -163,11 +131,10 @@ curl.exe -s -o NUL -w "%{http_code}" http://127.0.0.1:9877/    # 期望 200
 
 ### 2.5（可选）接弹幕 —— 以抖音为例（群友最常用）
 
-**最省事的做法**：直接用配套仓库 [赛博小雅 · 弹幕采集器](https://github.com/cyber-xiaoya/cyber-xiaoya-danmaku)，
+**最省事的做法**：直接用配套仓库 [赛博小雅 · 弹幕采集器]
 它把抖音/B站/YouTube/视频号 四家都封装好了，`tts.output` 设成 `dh`（默认就是）即可：
 
 ```powershell
-git clone https://github.com/cyber-xiaoya/cyber-xiaoya-danmaku.git
 cd cyber-xiaoya-danmaku
 copy config.example.json config.json      # 填房间号
 .venv\Scripts\python.exe reader.py       # 抖音还需另装 douyinLive（见下文）
@@ -316,41 +283,6 @@ Vidu 侧封盘可能要几分钟到几十分钟；页面「↻ 拉取录播」�
 - ❌ OmniVoice 模型权重（几 GB）、Python 依赖环境（2 GB+）、歌库音频
 - ❌ 弹幕采集器（另一个项目，见 §2.5）
 
-**这不是藏私**：形象、音色、人设是每个主播自己的东西，也是防止有人拿本项目做二次售卖的边界。
-代码是完整的，缺的都是"你自己的内容"。
-
 ---
-
-## 8. 许可证
-
-- **代码**：[GNU AGPL-3.0](./LICENSE)
-- **素材与品牌**：见 [NOTICE](./NOTICE)，不在 AGPL 授权范围内
+## 8. 依赖项
 - 第三方依赖见 `requirements.txt`
-
-## 9. 关于倒卖
-
-本项目**代码免费、永久免费**，我们不会在任何平台出售它。
-
-> ⚠️ **本项目没有官方 QQ 群、微信群，也不卖课、不卖安装服务。**
-> 任何以「官方答疑群」「内部版」「授权版」「代部署」名义收费的，都不是我，请直接拉黑。
-
-如果你看到有人在卖，那不是官方行为，欢迎把链接发到 [Issue](https://github.com/cyber-xiaoya/cyber-xiaoya-live/issues)。
-也提醒买家：盗版没有更新、没有答疑、出了问题也没人负责。
-
----
-
-## 10. 关注作者
-
-赛博小雅是我（**天工开帧**）在业余时间做的开源项目。想看她直播、催更、或者聊聊实现细节，来这些地方找我：
-
-| 平台 | 链接 |
-|---|---|
-| 🎵 抖音 | <https://v.douyin.com/BgCJXnllitM/> |
-| 📺 哔哩哔哩 | <https://space.bilibili.com/11946287> |
-| ▶️ YouTube | <https://www.youtube.com/@jintaoyi> |
-| ✖️ X / Twitter | <https://x.com/yijt1339303> |
-| 📝 博客 · 教程 | <https://www.19980303.xyz/> |
-| 💻 GitHub | <https://github.com/beiyege-01> |
-
-> 项目相关的问题**优先提到本仓库的 [Issue](https://github.com/cyber-xiaoya/cyber-xiaoya-live/issues)** —— 公开可查，也方便后来人搜到答案；私信容易被淹没。
-> 想直接看效果：抖音直播间搜「天工开帧」，晚上常有直播。
